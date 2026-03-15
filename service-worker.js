@@ -1,6 +1,6 @@
 const CACHE_NAME = 'customer-bottle-cache-v1';
 const URLS_TO_CACHE = [
-  './customer-manager.html',
+  './',
   './manifest.json'
 ];
 
