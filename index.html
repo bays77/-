@@ -1,0 +1,1236 @@
+
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>顧客管理システム</title>
+    <link rel="manifest" href="manifest.json">
+    <style>
+        :root {
+            --color-bg-primary: #f8fafc;
+            --color-bg-secondary: #ffffff;
+            --color-bg-tertiary: #e0f2fe;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #475569;
+            --color-accent: #0284c7;
+            --color-accent-hover: #0369a1;
+            --color-success: #22c55e;
+            --color-warning: #f59e0b;
+            --color-danger: #ef4444;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', 'Hiragino Kaku Gothic ProN', 'Yu Gothic', sans-serif;
+            background: var(--color-bg-primary);
+            color: var(--color-text-primary);
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        .container {
+            max-width: 100%;
+            padding-bottom: 80px;
+        }
+
+        /* ヘッダー */
+        .header {
+            background: var(--color-bg-secondary);
+            padding: 1rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .header h1 {
+            font-size: 1.25rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .search-box {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 0.75rem;
+            background: var(--color-bg-secondary);
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: var(--color-text-primary);
+            font-size: 1rem;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        /* ボトムナビゲーション */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: var(--color-bg-secondary);
+            display: flex;
+            justify-content: space-around;
+            padding: 0.75rem 0;
+            box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.3);
+            z-index: 100;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.25rem;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            color: var(--color-text-secondary);
+            transition: color 0.2s;
+            border: none;
+            background: none;
+            font-size: 0.75rem;
+        }
+
+        .nav-item.active {
+            color: var(--color-accent);
+        }
+
+        .nav-item:hover {
+            color: var(--color-accent-hover);
+        }
+
+        .nav-icon {
+            font-size: 1.5rem;
+        }
+
+        /* メインコンテンツエリア */
+        .view {
+            display: none;
+            padding: 1rem;
+        }
+
+        .view.active {
+            display: block;
+        }
+
+        /* 顧客リスト */
+        .customer-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+        }
+
+        .customer-card {
+            background: var(--color-bg-secondary);
+            padding: 1rem;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .customer-card:hover {
+            border-color: var(--color-accent);
+            transform: translateY(-2px);
+        }
+
+        .customer-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+        }
+
+        .customer-info {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--color-text-secondary);
+        }
+
+        .info-badge {
+            background: var(--color-bg-tertiary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 6px;
+        }
+
+        /* ボタン */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border-radius: 8px;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: var(--color-accent);
+            color: #ffffff;
+        }
+
+        .btn-primary:hover {
+            background: var(--color-accent-hover);
+        }
+
+        .btn-secondary {
+            background: var(--color-bg-tertiary);
+            color: var(--color-text-primary);
+        }
+
+        .btn-danger {
+            background: var(--color-danger);
+            color: white;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        /* フォーム */
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--color-text-secondary);
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 0.75rem;
+            background: var(--color-bg-secondary);
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            color: var(--color-text-primary);
+            font-size: 1rem;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--color-accent);
+        }
+
+        /* スライダー */
+        .slider-container {
+            padding: 1rem 0;
+        }
+
+        .slider-value {
+            text-align: center;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--color-accent);
+            margin-bottom: 1rem;
+        }
+
+        .slider {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: var(--color-bg-tertiary);
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            cursor: pointer;
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            cursor: pointer;
+            border: none;
+        }
+
+        /* カレンダー */
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: var(--color-bg-secondary);
+            border-radius: 12px;
+        }
+
+        .calendar-nav {
+            background: var(--color-bg-tertiary);
+            border: none;
+            color: var(--color-text-primary);
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        .calendar-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .calendar-day-header {
+            text-align: center;
+            padding: 0.5rem;
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            font-weight: 600;
+        }
+
+        .calendar-day {
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: var(--color-bg-secondary);
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            font-size: 0.875rem;
+            border: 1px solid transparent;
+        }
+
+        .calendar-day:hover {
+            border-color: var(--color-accent);
+        }
+
+        .calendar-day.other-month {
+            opacity: 0.3;
+        }
+
+        .calendar-day.today {
+            border-color: var(--color-accent);
+            background: rgba(56, 189, 248, 0.1);
+        }
+
+        .calendar-day.has-event {
+            background: rgba(56, 189, 248, 0.2);
+        }
+
+        .event-dot {
+            width: 4px;
+            height: 4px;
+            background: var(--color-accent);
+            border-radius: 50%;
+            position: absolute;
+            bottom: 4px;
+        }
+
+        .calendar-events {
+            margin-top: 1rem;
+        }
+
+        .event-item {
+            background: var(--color-bg-secondary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+            border-left: 4px solid var(--color-accent);
+        }
+
+        .event-type {
+            font-size: 0.75rem;
+            color: var(--color-text-secondary);
+            margin-bottom: 0.25rem;
+        }
+
+        .event-name {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+        }
+
+        /* モーダル */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 200;
+            overflow-y: auto;
+            padding: 1rem;
+        }
+
+        .modal.active {
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            padding-top: 2rem;
+        }
+
+        .modal-content {
+            background: var(--color-bg-secondary);
+            border-radius: 16px;
+            padding: 1.5rem;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--color-text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0.25rem;
+        }
+
+        /* 詳細ビュー */
+        .detail-section {
+            background: var(--color-bg-secondary);
+            padding: 1rem;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+        }
+
+        .detail-section h3 {
+            margin-bottom: 1rem;
+            color: var(--color-accent);
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--color-bg-tertiary);
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--color-text-secondary);
+        }
+
+        .detail-value {
+            font-weight: 600;
+        }
+
+        .bottle-item {
+            background: var(--color-bg-tertiary);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 0.75rem;
+        }
+
+        .bottle-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .bottle-name {
+            font-weight: 600;
+        }
+
+        .bottle-percentage {
+            font-size: 1.125rem;
+            font-weight: 700;
+            color: var(--color-accent);
+        }
+
+        .bottle-bar {
+            height: 8px;
+            background: var(--color-bg-primary);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bottle-fill {
+            height: 100%;
+            background: var(--color-accent);
+            transition: width 0.3s;
+        }
+
+        .visit-item {
+            padding: 0.5rem 0;
+            border-bottom: 1px solid var(--color-bg-tertiary);
+        }
+
+        .visit-item:last-child {
+            border-bottom: none;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 90px;
+            right: 1rem;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: var(--color-accent);
+            color: var(--color-bg-primary);
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(56, 189, 248, 0.4);
+            z-index: 50;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 1rem;
+            color: var(--color-text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- ヘッダー -->
+        <div class="header">
+            <h1>顧客管理システム</h1>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="顧客名で検索...">
+            </div>
+        </div>
+
+        <!-- 顧客一覧ビュー -->
+        <div id="customersView" class="view active">
+            <div id="customerList" class="customer-list"></div>
+        </div>
+
+        <!-- カレンダービュー -->
+        <div id="calendarView" class="view">
+            <div class="calendar-header">
+                <button class="calendar-nav" onclick="changeMonth(-1)">◀</button>
+                <div class="calendar-title" id="calendarTitle"></div>
+                <button class="calendar-nav" onclick="changeMonth(1)">▶</button>
+            </div>
+            <div class="calendar-grid" id="calendarGrid"></div>
+            <div class="calendar-events" id="calendarEvents"></div>
+        </div>
+
+        
+        <!-- 顧客詳細モーダル -->
+        <div id="customerDetailModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">顧客詳細</h2>
+                    <button class="close-btn" onclick="closeModal('customerDetailModal')">&times;</button>
+                </div>
+                <div id="customerDetailContent"></div>
+            </div>
+        </div>
+
+        <!-- 顧客追加・編集モーダル -->
+        <div id="customerFormModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="formModalTitle">新規顧客追加</h2>
+                    <button class="close-btn" onclick="closeModal('customerFormModal')">&times;</button>
+                </div>
+                <form id="customerForm">
+                    <div class="form-group">
+                        <label class="form-label">顧客名 *</label>
+                        <input type="text" class="form-input" id="customerName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">電話番号</label>
+                        <input type="tel" class="form-input" id="customerPhone">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">誕生日</label>
+                        <input type="date" class="form-input" id="customerBirthday">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">メモ</label>
+                        <textarea class="form-input" id="customerNotes" rows="3"></textarea>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('customerFormModal')" style="flex: 1;">キャンセル</button>
+                        <button type="submit" class="btn btn-primary" style="flex: 2;">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- ボトル追加・編集モーダル -->
+        <div id="bottleFormModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title" id="bottleFormModalTitle">ボトル追加</h2>
+                    <button class="close-btn" onclick="closeModal('bottleFormModal')">&times;</button>
+                </div>
+                <form id="bottleForm">
+                    <input type="hidden" id="bottleCustomerId">
+                    <div class="form-group">
+                        <label class="form-label">ボトル名 *</label>
+                        <input type="text" class="form-input" id="bottleName" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">残量</label>
+                        <div class="slider-container">
+                            <div class="slider-value" id="bottlePercentageDisplay">50%</div>
+                            <input type="range" class="slider" id="bottlePercentage" min="0" max="100" step="5" value="50">
+                        </div>
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('bottleFormModal')" style="flex: 1;">キャンセル</button>
+                        <button type="submit" class="btn btn-primary" style="flex: 2;">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- 予約追加モーダル -->
+        <div id="reservationFormModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2 class="modal-title">来店予定追加</h2>
+                    <button class="close-btn" onclick="closeModal('reservationFormModal')">&times;</button>
+                </div>
+                <form id="reservationForm">
+                    <div class="form-group">
+                        <label class="form-label">顧客選択 *</label>
+                        <select class="form-input" id="reservationCustomer" required>
+                            <option value="">顧客を選択...</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">予定日 *</label>
+                        <input type="date" class="form-input" id="reservationDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">メモ</label>
+                        <input type="text" class="form-input" id="reservationNotes">
+                    </div>
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('reservationFormModal')" style="flex: 1;">キャンセル</button>
+                        <button type="submit" class="btn btn-primary" style="flex: 2;">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- FAB -->
+        <button class="fab" id="fab" onclick="handleFabClick()">+</button>
+
+        <!-- ボトムナビゲーション -->
+        <div class="bottom-nav">
+            <button class="nav-item active" onclick="switchView('customers')">
+                <div class="nav-icon">👥</div>
+                <div>顧客</div>
+            </button>
+            <button class="nav-item" onclick="switchView('calendar')">
+                <div class="nav-icon">📅</div>
+                <div>カレンダー</div>
+            </button>
+                    </div>
+    </div>
+
+    <script>
+        let customers = [];
+        let bottles = [];
+        let visits = [];
+        let reservations = [];
+        let currentView = 'customers';
+        let currentCustomerId = null;
+        let currentBottleId = null;
+        let currentDate = new Date();
+        let editingCustomerId = null;
+
+        // 初期データ
+        function initData() {
+            const storedCustomers = localStorage.getItem('customers');
+            const storedBottles = localStorage.getItem('bottles');
+            const storedVisits = localStorage.getItem('visits');
+            const storedReservations = localStorage.getItem('reservations');
+
+            if (storedCustomers) customers = JSON.parse(storedCustomers);
+            if (storedBottles) bottles = JSON.parse(storedBottles);
+            if (storedVisits) visits = JSON.parse(storedVisits);
+            if (storedReservations) reservations = JSON.parse(storedReservations);
+
+            renderCustomerList();
+            renderCalendar();
+            renderBottlesList();
+        }
+
+        // データ保存
+        function saveData() {
+            localStorage.setItem('customers', JSON.stringify(customers));
+            localStorage.setItem('bottles', JSON.stringify(bottles));
+            localStorage.setItem('visits', JSON.stringify(visits));
+            localStorage.setItem('reservations', JSON.stringify(reservations));
+        }
+
+        // ビュー切り替え
+        function switchView(view) {
+            currentView = view;
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+
+            if (view === 'customers') {
+                document.getElementById('customersView').classList.add('active');
+                document.querySelectorAll('.nav-item')[0].classList.add('active');
+                renderCustomerList();
+            } else if (view === 'calendar') {
+                document.getElementById('calendarView').classList.add('active');
+                document.querySelectorAll('.nav-item')[1].classList.add('active');
+                renderCalendar();
+            } else if (view === 'bottles') {
+                document.getElementById('bottlesView').classList.add('active');
+                document.querySelectorAll('.nav-item')[2].classList.add('active');
+                renderBottlesList();
+            }
+        }
+
+        // 顧客リスト表示
+        function renderCustomerList() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filteredCustomers = customers.filter(c => 
+                c.name.toLowerCase().includes(searchTerm)
+            );
+
+            const html = filteredCustomers.length > 0 ? filteredCustomers.map(customer => {
+                const customerBottles = bottles.filter(b => b.customerId === customer.id);
+                const customerVisits = visits.filter(v => v.customerId === customer.id);
+                
+                return `
+                    <div class="customer-card" onclick="showCustomerDetail('${customer.id}')">
+                        <div class="customer-name">${customer.name}</div>
+                        <div class="customer-info">
+                            <span class="info-badge">🍾 ${customerBottles.length}本</span>
+                            <span class="info-badge">📊 来店${customerVisits.length}回</span>
+                            ${customer.birthday ? `<span class="info-badge">🎂 ${formatDate(customer.birthday)}</span>` : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('') : '<div class="empty-state"><div class="empty-icon">👥</div><p>顧客が登録されていません</p></div>';
+
+            document.getElementById('customerList').innerHTML = html;
+        }
+
+        // 顧客詳細表示
+        function showCustomerDetail(customerId) {
+            const customer = customers.find(c => c.id === customerId);
+            if (!customer) return;
+
+            currentCustomerId = customerId;
+            const customerBottles = bottles.filter(b => b.customerId === customerId);
+            const customerVisits = visits.filter(v => v.customerId === customerId).sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            const html = `
+                <div class="detail-section">
+                    <h3>基本情報</h3>
+                    <div class="detail-row">
+                        <span class="detail-label">顧客名</span>
+                        <span class="detail-value">${customer.name}</span>
+                    </div>
+                    ${customer.phone ? `
+                    <div class="detail-row">
+                        <span class="detail-label">電話番号</span>
+                        <span class="detail-value">${customer.phone}</span>
+                    </div>` : ''}
+                    ${customer.birthday ? `
+                    <div class="detail-row">
+                        <span class="detail-label">誕生日</span>
+                        <span class="detail-value">${formatDate(customer.birthday)}</span>
+                    </div>` : ''}
+                    ${customer.notes ? `
+                    <div class="detail-row">
+                        <span class="detail-label">メモ</span>
+                        <span class="detail-value">${customer.notes}</span>
+                    </div>` : ''}
+                </div>
+
+                <div class="detail-section">
+                    <h3>キープボトル (${customerBottles.length}本)</h3>
+                    ${customerBottles.length > 0 ? customerBottles.map(bottle => `
+                        <div class="bottle-item" onclick="editBottle('${bottle.id}')">
+                            <div class="bottle-header">
+                                <span class="bottle-name">${bottle.name}</span>
+                                <span class="bottle-percentage">${bottle.percentage}%</span>
+                            </div>
+                            <div class="bottle-bar">
+                                <div class="bottle-fill" style="width: ${bottle.percentage}%"></div>
+                            </div>
+                        </div>
+                    `).join('') : '<p style="color: var(--color-text-secondary);">キープボトルはありません</p>'}
+                    <button class="btn btn-primary btn-full" onclick="addBottle('${customerId}')">ボトル追加</button>
+                </div>
+
+                <div class="detail-section">
+                    <h3>来店履歴 (${customerVisits.length}回)</h3>
+                    ${customerVisits.length > 0 ? `
+                        <div style="max-height: 200px; overflow-y: auto;">
+                            ${customerVisits.slice(0, 10).map(visit => `
+                                <div class="visit-item">
+                                    <div>${formatDate(visit.date)}</div>
+                                </div>
+                            `).join('')}
+                            ${customerVisits.length > 10 ? `<p style="text-align: center; color: var(--color-text-secondary); margin-top: 0.5rem;">他${customerVisits.length - 10}件</p>` : ''}
+                        </div>
+                        <button class="btn btn-primary btn-full" style="margin-top: 1rem;" onclick="addVisit('${customerId}')">来店記録追加</button>
+                    ` : '<p style="color: var(--color-text-secondary);">来店履歴はありません</p><button class="btn btn-primary btn-full" onclick="addVisit(\'' + customerId + '\')">来店記録追加</button>'}
+                </div>
+
+                <div class="btn-group">
+                    <button class="btn btn-secondary" onclick="editCustomer('${customerId}')">編集</button>
+                    <button class="btn btn-danger" onclick="deleteCustomer('${customerId}')">削除</button>
+                </div>
+            `;
+
+            document.getElementById('customerDetailContent').innerHTML = html;
+            openModal('customerDetailModal');
+        }
+
+        // カレンダー表示
+        function renderCalendar() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+
+            document.getElementById('calendarTitle').textContent = `${year}年 ${month + 1}月`;
+
+            const firstDay = new Date(year, month, 1);
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - firstDay.getDay());
+
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            let calendarHTML = days.map(day => `<div class="calendar-day-header">${day}</div>`).join('');
+
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (let i = 0; i < 42; i++) {
+                const date = new Date(startDate);
+                date.setDate(date.getDate() + i);
+                
+                const isOtherMonth = date.getMonth() !== month;
+                const isToday = date.getTime() === today.getTime();
+                const dateStr = formatDateForStorage(date);
+                
+                const dayEvents = [];
+                customers.forEach(customer => {
+                    if (customer.birthday) {
+                        const bDay = new Date(customer.birthday);
+                        if (bDay.getMonth() === date.getMonth() && bDay.getDate() === date.getDate()) {
+                            dayEvents.push({type: 'birthday', customer});
+                        }
+                    }
+                });
+                reservations.forEach(res => {
+                    if (res.date === dateStr) {
+                        const customer = customers.find(c => c.id === res.customerId);
+                        if (customer) dayEvents.push({type: 'reservation', customer, reservation: res});
+                    }
+                });
+
+                const hasEvent = dayEvents.length > 0;
+                
+                calendarHTML += `
+                    <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${hasEvent ? 'has-event' : ''}" 
+                         onclick="selectDate('${dateStr}')">
+                        ${date.getDate()}
+                        ${hasEvent ? '<div class="event-dot"></div>' : ''}
+                    </div>
+                `;
+            }
+
+            document.getElementById('calendarGrid').innerHTML = calendarHTML;
+            renderCalendarEvents();
+        }
+
+        function renderCalendarEvents() {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            
+            const events = [];
+            
+            customers.forEach(customer => {
+                if (customer.birthday) {
+                    const bDay = new Date(customer.birthday);
+                    if (bDay.getMonth() === month) {
+                        events.push({
+                            date: bDay.getDate(),
+                            type: 'birthday',
+                            name: customer.name,
+                            fullDate: new Date(year, month, bDay.getDate())
+                        });
+                    }
+                }
+            });
+
+            reservations.forEach(res => {
+                const resDate = new Date(res.date);
+                if (resDate.getFullYear() === year && resDate.getMonth() === month) {
+                    const customer = customers.find(c => c.id === res.customerId);
+                    if (customer) {
+                        events.push({
+                            date: resDate.getDate(),
+                            type: 'reservation',
+                            name: customer.name,
+                            notes: res.notes,
+                            fullDate: resDate
+                        });
+                    }
+                }
+            });
+
+            events.sort((a, b) => a.fullDate - b.fullDate);
+
+            const html = events.length > 0 ? events.map(event => `
+                <div class="event-item">
+                    <div class="event-type">${event.type === 'birthday' ? '🎂 誕生日' : '📅 来店予定'}</div>
+                    <div class="event-name">${event.date}日 - ${event.name}</div>
+                    ${event.notes ? `<div style="font-size: 0.875rem; color: var(--color-text-secondary);">${event.notes}</div>` : ''}
+                </div>
+            `).join('') : '<div class="empty-state"><p>今月の予定はありません</p></div>';
+
+            document.getElementById('calendarEvents').innerHTML = html;
+        }
+
+        function changeMonth(delta) {
+            currentDate.setMonth(currentDate.getMonth() + delta);
+            renderCalendar();
+        }
+
+        function selectDate(dateStr) {
+            document.getElementById('reservationDate').value = dateStr;
+            populateCustomerSelect();
+            openModal('reservationFormModal');
+        }
+
+        // ボトル一覧表示
+        function renderBottlesList() {
+            const bottlesWithCustomers = bottles.map(bottle => {
+                const customer = customers.find(c => c.id === bottle.customerId);
+                return {...bottle, customerName: customer ? customer.name : '不明'};
+            });
+
+            const html = bottlesWithCustomers.length > 0 ? bottlesWithCustomers.map(bottle => `
+                <div class="bottle-item" onclick="editBottle('${bottle.id}')">
+                    <div style="margin-bottom: 0.5rem; color: var(--color-text-secondary); font-size: 0.875rem;">${bottle.customerName}</div>
+                    <div class="bottle-header">
+                        <span class="bottle-name">${bottle.name}</span>
+                        <span class="bottle-percentage">${bottle.percentage}%</span>
+                    </div>
+                    <div class="bottle-bar">
+                        <div class="bottle-fill" style="width: ${bottle.percentage}%"></div>
+                    </div>
+                </div>
+            `).join('') : '<div class="empty-state"><div class="empty-icon">🍾</div><p>ボトルが登録されていません</p></div>';
+
+            document.getElementById('bottlesList').innerHTML = html;
+        }
+
+        // FABクリック
+        function handleFabClick() {
+            if (currentView === 'customers') {
+                openCustomerForm();
+            } else if (currentView === 'calendar') {
+                populateCustomerSelect();
+                openModal('reservationFormModal');
+            } else if (currentView === 'bottles') {
+                openBottleFormForAll();
+            }
+        }
+
+        // 顧客フォーム
+        function openCustomerForm(customerId = null) {
+            editingCustomerId = customerId;
+            const title = customerId ? '顧客編集' : '新規顧客追加';
+            document.getElementById('formModalTitle').textContent = title;
+
+            if (customerId) {
+                const customer = customers.find(c => c.id === customerId);
+                document.getElementById('customerName').value = customer.name;
+                document.getElementById('customerPhone').value = customer.phone || '';
+                document.getElementById('customerBirthday').value = customer.birthday || '';
+                document.getElementById('customerNotes').value = customer.notes || '';
+            } else {
+                document.getElementById('customerForm').reset();
+            }
+
+            openModal('customerFormModal');
+        }
+
+        function editCustomer(customerId) {
+            closeModal('customerDetailModal');
+            openCustomerForm(customerId);
+        }
+
+        document.getElementById('customerForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const customerData = {
+                name: document.getElementById('customerName').value,
+                phone: document.getElementById('customerPhone').value,
+                birthday: document.getElementById('customerBirthday').value,
+                notes: document.getElementById('customerNotes').value
+            };
+
+            if (editingCustomerId) {
+                const index = customers.findIndex(c => c.id === editingCustomerId);
+                customers[index] = {...customers[index], ...customerData};
+            } else {
+                const newCustomer = {
+                    id: Date.now().toString(),
+                    ...customerData
+                };
+                customers.push(newCustomer);
+            }
+
+            saveData();
+            renderCustomerList();
+            closeModal('customerFormModal');
+            editingCustomerId = null;
+        });
+
+        function deleteCustomer(customerId) {
+            if (confirm('この顧客を削除してもよろしいですか？\n関連するボトルや来店履歴も削除されます。')) {
+                customers = customers.filter(c => c.id !== customerId);
+                bottles = bottles.filter(b => b.customerId !== customerId);
+                visits = visits.filter(v => v.customerId !== customerId);
+                reservations = reservations.filter(r => r.customerId !== customerId);
+                saveData();
+                closeModal('customerDetailModal');
+                renderCustomerList();
+                renderCalendar();
+                renderBottlesList();
+            }
+        }
+
+        // ボトルフォーム
+        function addBottle(customerId) {
+            currentBottleId = null;
+            document.getElementById('bottleFormModalTitle').textContent = 'ボトル追加';
+            document.getElementById('bottleCustomerId').value = customerId;
+            document.getElementById('bottleForm').reset();
+            document.getElementById('bottlePercentage').value = 100;
+            document.getElementById('bottlePercentageDisplay').textContent = '100%';
+            openModal('bottleFormModal');
+        }
+
+        function openBottleFormForAll() {
+            currentBottleId = null;
+            document.getElementById('bottleFormModalTitle').textContent = 'ボトル追加';
+            document.getElementById('bottleCustomerId').value = '';
+            
+            const select = document.createElement('select');
+            select.className = 'form-input';
+            select.id = 'bottleCustomerSelect';
+            select.required = true;
+            select.innerHTML = '<option value="">顧客を選択...</option>' + 
+                customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+            
+            const formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
+            formGroup.innerHTML = '<label class="form-label">顧客選択 *</label>';
+            formGroup.appendChild(select);
+            
+            const form = document.getElementById('bottleForm');
+            form.insertBefore(formGroup, form.firstChild);
+            
+            document.getElementById('bottleForm').reset();
+            document.getElementById('bottlePercentage').value = 100;
+            document.getElementById('bottlePercentageDisplay').textContent = '100%';
+            openModal('bottleFormModal');
+        }
+
+        function editBottle(bottleId) {
+            const bottle = bottles.find(b => b.id === bottleId);
+            if (!bottle) return;
+
+            currentBottleId = bottleId;
+            document.getElementById('bottleFormModalTitle').textContent = 'ボトル編集';
+            document.getElementById('bottleCustomerId').value = bottle.customerId;
+            document.getElementById('bottleName').value = bottle.name;
+            document.getElementById('bottlePercentage').value = bottle.percentage;
+            document.getElementById('bottlePercentageDisplay').textContent = bottle.percentage + '%';
+            
+            if (currentView === 'bottles') {
+                openModal('bottleFormModal');
+            } else {
+                closeModal('customerDetailModal');
+                openModal('bottleFormModal');
+            }
+        }
+
+        document.getElementById('bottlePercentage').addEventListener('input', function() {
+            document.getElementById('bottlePercentageDisplay').textContent = this.value + '%';
+        });
+
+        document.getElementById('bottleForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            let customerId = document.getElementById('bottleCustomerId').value;
+            const customerSelect = document.getElementById('bottleCustomerSelect');
+            if (customerSelect) {
+                customerId = customerSelect.value;
+            }
+
+            const bottleData = {
+                customerId: customerId,
+                name: document.getElementById('bottleName').value,
+                percentage: parseInt(document.getElementById('bottlePercentage').value)
+            };
+
+            if (currentBottleId) {
+                const index = bottles.findIndex(b => b.id === currentBottleId);
+                bottles[index] = {...bottles[index], ...bottleData};
+            } else {
+                const newBottle = {
+                    id: Date.now().toString(),
+                    ...bottleData
+                };
+                bottles.push(newBottle);
+            }
+
+            saveData();
+            renderBottlesList();
+            closeModal('bottleFormModal');
+            
+            if (currentCustomerId) {
+                setTimeout(() => showCustomerDetail(currentCustomerId), 100);
+            }
+            
+            const cs = document.getElementById('bottleCustomerSelect');
+            if (cs) {
+                cs.parentElement.remove();
+            }
+            
+            currentBottleId = null;
+        });
+
+        // 来店記録
+        function addVisit(customerId) {
+            const today = formatDateForStorage(new Date());
+            const newVisit = {
+                id: Date.now().toString(),
+                customerId: customerId,
+                date: today
+            };
+            visits.push(newVisit);
+            saveData();
+            closeModal('customerDetailModal');
+            setTimeout(() => showCustomerDetail(customerId), 100);
+        }
+
+        // 予約フォーム
+        function populateCustomerSelect() {
+            const select = document.getElementById('reservationCustomer');
+            select.innerHTML = '<option value="">顧客を選択...</option>' + 
+                customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+        }
+
+        document.getElementById('reservationForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const newReservation = {
+                id: Date.now().toString(),
+                customerId: document.getElementById('reservationCustomer').value,
+                date: document.getElementById('reservationDate').value,
+                notes: document.getElementById('reservationNotes').value
+            };
+
+            reservations.push(newReservation);
+            saveData();
+            renderCalendar();
+            closeModal('reservationFormModal');
+            this.reset();
+        });
+
+        // モーダル操作
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // 検索
+        document.getElementById('searchInput').addEventListener('input', renderCustomerList);
+
+        // ユーティリティ
+        function formatDate(dateStr) {
+            if (!dateStr) return '';
+            const date = new Date(dateStr);
+            return `${date.getMonth() + 1}/${date.getDate()}`;
+        }
+
+        function formatDateForStorage(date) {
+            const year = date.getFullYear();
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const day = String(date.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
+        // 初期化
+        initData();
+    </script>
+ <script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch(err => console.log('SW registration failed', err));
+  });
+}
+</script>
+
+</body>
+</html>
