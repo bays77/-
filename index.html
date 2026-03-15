@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>顧客管理システム</title>
+    <title>顧客ボトル管理</title>
     <link rel="manifest" href="manifest.json?v=2">
     <style>
         :root {
@@ -541,7 +540,7 @@
     <div class="container">
         <!-- ヘッダー -->
         <div class="header">
-            <h1>顧客管理システム</h1>
+            <h1>顧客ボトル管理</h1>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="顧客名で検索...">
             </div>
@@ -563,7 +562,6 @@
             <div class="calendar-events" id="calendarEvents"></div>
         </div>
 
-        
         <!-- 顧客詳細モーダル -->
         <div id="customerDetailModal" class="modal">
             <div class="modal-content">
@@ -678,7 +676,7 @@
                 <div class="nav-icon">📅</div>
                 <div>カレンダー</div>
             </button>
-                    </div>
+        </div>
     </div>
 
     <script>
@@ -706,6 +704,7 @@
 
             renderCustomerList();
             renderCalendar();
+            // ボトル一覧ビューは削除したので、ここではrenderBottlesListは呼ばない
         }
 
         // データ保存
@@ -730,24 +729,20 @@
                 document.getElementById('calendarView').classList.add('active');
                 document.querySelectorAll('.nav-item')[1].classList.add('active');
                 renderCalendar();
-            } else if (view === 'bottles') {
-                document.getElementById('bottlesView').classList.add('active');
-                document.querySelectorAll('.nav-item')[2].classList.add('active');
-                renderBottlesList();
             }
         }
 
         // 顧客リスト表示
         function renderCustomerList() {
             const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const filteredCustomers = customers.filter(c => 
+            const filteredCustomers = customers.filter(c =>
                 c.name.toLowerCase().includes(searchTerm)
             );
 
             const html = filteredCustomers.length > 0 ? filteredCustomers.map(customer => {
                 const customerBottles = bottles.filter(b => b.customerId === customer.id);
                 const customerVisits = visits.filter(v => v.customerId === customer.id);
-                
+
                 return `
                     <div class="customer-card" onclick="showCustomerDetail('${customer.id}')">
                         <div class="customer-name">${customer.name}</div>
@@ -770,7 +765,9 @@
 
             currentCustomerId = customerId;
             const customerBottles = bottles.filter(b => b.customerId === customerId);
-            const customerVisits = visits.filter(v => v.customerId === customerId).sort((a, b) => new Date(b.date) - new Date(a.date));
+            const customerVisits = visits
+                .filter(v => v.customerId === customerId)
+                .sort((a, b) => new Date(b.date) - new Date(a.date));
 
             const html = `
                 <div class="detail-section">
@@ -857,11 +854,11 @@
             for (let i = 0; i < 42; i++) {
                 const date = new Date(startDate);
                 date.setDate(date.getDate() + i);
-                
+
                 const isOtherMonth = date.getMonth() !== month;
                 const isToday = date.getTime() === today.getTime();
                 const dateStr = formatDateForStorage(date);
-                
+
                 const dayEvents = [];
                 customers.forEach(customer => {
                     if (customer.birthday) {
@@ -879,9 +876,9 @@
                 });
 
                 const hasEvent = dayEvents.length > 0;
-                
+
                 calendarHTML += `
-                    <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${hasEvent ? 'has-event' : ''}" 
+                    <div class="calendar-day ${isOtherMonth ? 'other-month' : ''} ${isToday ? 'today' : ''} ${hasEvent ? 'has-event' : ''}"
                          onclick="selectDate('${dateStr}')">
                         ${date.getDate()}
                         ${hasEvent ? '<div class="event-dot"></div>' : ''}
@@ -896,9 +893,9 @@
         function renderCalendarEvents() {
             const year = currentDate.getFullYear();
             const month = currentDate.getMonth();
-            
+
             const events = [];
-            
+
             customers.forEach(customer => {
                 if (customer.birthday) {
                     const bDay = new Date(customer.birthday);
@@ -953,29 +950,6 @@
             openModal('reservationFormModal');
         }
 
-        // ボトル一覧表示
-        function renderBottlesList() {
-            const bottlesWithCustomers = bottles.map(bottle => {
-                const customer = customers.find(c => c.id === bottle.customerId);
-                return {...bottle, customerName: customer ? customer.name : '不明'};
-            });
-
-            const html = bottlesWithCustomers.length > 0 ? bottlesWithCustomers.map(bottle => `
-                <div class="bottle-item" onclick="editBottle('${bottle.id}')">
-                    <div style="margin-bottom: 0.5rem; color: var(--color-text-secondary); font-size: 0.875rem;">${bottle.customerName}</div>
-                    <div class="bottle-header">
-                        <span class="bottle-name">${bottle.name}</span>
-                        <span class="bottle-percentage">${bottle.percentage}%</span>
-                    </div>
-                    <div class="bottle-bar">
-                        <div class="bottle-fill" style="width: ${bottle.percentage}%"></div>
-                    </div>
-                </div>
-            `).join('') : '<div class="empty-state"><div class="empty-icon">🍾</div><p>ボトルが登録されていません</p></div>';
-
-            document.getElementById('bottlesList').innerHTML = html;
-        }
-
         // FABクリック
         function handleFabClick() {
             if (currentView === 'customers') {
@@ -983,8 +957,6 @@
             } else if (currentView === 'calendar') {
                 populateCustomerSelect();
                 openModal('reservationFormModal');
-            } else if (currentView === 'bottles') {
-                openBottleFormForAll();
             }
         }
 
@@ -1049,7 +1021,6 @@
                 closeModal('customerDetailModal');
                 renderCustomerList();
                 renderCalendar();
-                renderBottlesList();
             }
         }
 
@@ -1058,32 +1029,6 @@
             currentBottleId = null;
             document.getElementById('bottleFormModalTitle').textContent = 'ボトル追加';
             document.getElementById('bottleCustomerId').value = customerId;
-            document.getElementById('bottleForm').reset();
-            document.getElementById('bottlePercentage').value = 100;
-            document.getElementById('bottlePercentageDisplay').textContent = '100%';
-            openModal('bottleFormModal');
-        }
-
-        function openBottleFormForAll() {
-            currentBottleId = null;
-            document.getElementById('bottleFormModalTitle').textContent = 'ボトル追加';
-            document.getElementById('bottleCustomerId').value = '';
-            
-            const select = document.createElement('select');
-            select.className = 'form-input';
-            select.id = 'bottleCustomerSelect';
-            select.required = true;
-            select.innerHTML = '<option value="">顧客を選択...</option>' + 
-                customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
-            
-            const formGroup = document.createElement('div');
-            formGroup.className = 'form-group';
-            formGroup.innerHTML = '<label class="form-label">顧客選択 *</label>';
-            formGroup.appendChild(select);
-            
-            const form = document.getElementById('bottleForm');
-            form.insertBefore(formGroup, form.firstChild);
-            
             document.getElementById('bottleForm').reset();
             document.getElementById('bottlePercentage').value = 100;
             document.getElementById('bottlePercentageDisplay').textContent = '100%';
@@ -1100,13 +1045,9 @@
             document.getElementById('bottleName').value = bottle.name;
             document.getElementById('bottlePercentage').value = bottle.percentage;
             document.getElementById('bottlePercentageDisplay').textContent = bottle.percentage + '%';
-            
-            if (currentView === 'bottles') {
-                openModal('bottleFormModal');
-            } else {
-                closeModal('customerDetailModal');
-                openModal('bottleFormModal');
-            }
+
+            closeModal('customerDetailModal');
+            openModal('bottleFormModal');
         }
 
         document.getElementById('bottlePercentage').addEventListener('input', function() {
@@ -1117,10 +1058,6 @@
             e.preventDefault();
 
             let customerId = document.getElementById('bottleCustomerId').value;
-            const customerSelect = document.getElementById('bottleCustomerSelect');
-            if (customerSelect) {
-                customerId = customerSelect.value;
-            }
 
             const bottleData = {
                 customerId: customerId,
@@ -1140,18 +1077,12 @@
             }
 
             saveData();
-            renderBottlesList();
             closeModal('bottleFormModal');
-            
+
             if (currentCustomerId) {
                 setTimeout(() => showCustomerDetail(currentCustomerId), 100);
             }
-            
-            const cs = document.getElementById('bottleCustomerSelect');
-            if (cs) {
-                cs.parentElement.remove();
-            }
-            
+
             currentBottleId = null;
         });
 
@@ -1172,7 +1103,7 @@
         // 予約フォーム
         function populateCustomerSelect() {
             const select = document.getElementById('reservationCustomer');
-            select.innerHTML = '<option value="">顧客を選択...</option>' + 
+            select.innerHTML = '<option value="">顧客を選択...</option>' +
                 customers.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
         }
 
@@ -1219,38 +1150,39 @@
             return `${year}-${month}-${day}`;
         }
 
+        // Service Worker登録（PWA用）
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service-worker.js')
+                    .catch(err => console.log('SW registration failed', err));
+            });
+        }
+
         // 初期化
         initData();
     </script>
 
- <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('./service-worker.js')
-      .catch(err => console.log('SW registration failed', err));
-  });
-}
-</script>
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "firebase/app";
-import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+    <!-- Firebase 初期化（今は接続だけ） -->
+    <script type="module">
+      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+      import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+      import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
-const firebaseConfig = {
-  apiKey: "AIzaSyC3wiXg0g4pVqNa33Q553PiuMkr_sY7_cM",
-  authDomain: "customer-bottle-app.firebaseapp.com",
-  projectId: "customer-bottle-app",
-  storageBucket: "customer-bottle-app.firebasestorage.app",
-  messagingSenderId: "276025360927",
-  appId: "1:276025360927:web:9199fa9aa2b726a90a0b2a",
-  measurementId: "G-ERXYHGWQM7"
-};
+      const firebaseConfig = {
+        apiKey: "AIzaSyC3wiXg0g4pVqNa33Q553PiuMkr_sY7_cM",
+        authDomain: "customer-bottle-app.firebaseapp.com",
+        projectId: "customer-bottle-app",
+        storageBucket: "customer-bottle-app.firebasestorage.app",
+        messagingSenderId: "276025360927",
+        appId: "1:276025360927:web:9199fa9aa2b726a90a0b2a",
+        measurementId: "G-ERXYHGWQM7"
+      };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const db = getFirestore(app);
+
+      console.log("Firebase initialized", app);
+    </script>
 </body>
 </html>
