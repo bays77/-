@@ -1022,14 +1022,27 @@
             if (editingCustomerId) {
                 const index = customers.findIndex(c => c.id === editingCustomerId);
                 customers[index] = {...customers[index], ...customerData};
-            } else {
-                const newCustomer = {
-                    id: Date.now().toString(),
-                    ...customerData
-                };
-                customers.push(newCustomer);
-            }
+             } else {
+        // 新規顧客追加
+        const newCustomer = {
+            id: Date.now().toString(),
+            ...customerData
+        };
+        customers.push(newCustomer);
 
+        // ★ Firestoreにも保存（ログイン時だけ）
+        if (window.appAuth && window.appAuth.db) {
+            try {
+                addDoc(customersCol, {
+                    ...customerData,
+                    localId: newCustomer.id,
+                    createdAt: new Date()
+                });
+            } catch (e) {
+                console.error("Firestore保存エラー:", e);
+            }
+        }
+    }
             saveData();
             renderCustomerList();
             closeModal('customerFormModal');
@@ -1190,10 +1203,22 @@
     <!-- Firebase 初期化（今は接続だけ） -->
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+  import {
+    getAuth,
+    signInWithEmailAndPassword,
+    onAuthStateChanged,
+    signOut
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  import {
+    getFirestore,
+    collection,
+    addDoc,
+    setDoc,
+    getDocs,
+    doc
+  } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-  const firebaseConfig = {
+   const firebaseConfig = {
     apiKey: "AIzaSyC3wiXg0g4pVqNa33Q553PiuMkr_sY7_cM",
     authDomain: "customer-bottle-app.firebaseapp.com",
     projectId: "customer-bottle-app",
@@ -1206,6 +1231,7 @@
   const app = initializeApp(firebaseConfig);
   const auth = getAuth(app);
   const db = getFirestore(app);
+  const customersCol = collection(db, "customers");
 
   console.log("Firebase initialized", app);
 
