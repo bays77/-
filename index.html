@@ -538,6 +538,29 @@
 </head>
 <body>
     <div class="container">
+    <!-- ログインビュー -->
+    <div id="loginView" class="view active">
+        <div style="padding: 2rem 1rem;">
+            <h2 style="margin-bottom: 1rem; font-size: 1.25rem;">ログイン</h2>
+            <p style="font-size: 0.9rem; color: #475569; margin-bottom: 1rem;">
+                共通のメールアドレスとパスワードを入力してください。
+            </p>
+            <div class="form-group">
+                <label class="form-label">メールアドレス</label>
+                <input type="email" id="loginEmail" class="form-input">
+            </div>
+            <div class="form-group">
+                <label class="form-label">パスワード</label>
+                <input type="password" id="loginPassword" class="form-input">
+            </div>
+            <div id="loginError" style="color: #ef4444; font-size: 0.85rem; margin-bottom: 0.5rem;"></div>
+            <button id="loginButton" class="btn btn-primary btn-full">ログイン</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- ここから下は今のヘッダー〜各ビュー（顧客/カレンダーなど） -->
+
         <!-- ヘッダー -->
         <div class="header">
             <h1>顧客ボトル管理</h1>
@@ -547,7 +570,7 @@
         </div>
 
         <!-- 顧客一覧ビュー -->
-        <div id="customersView" class="view active">
+        <div id="customersView" class="view">
             <div id="customerList" class="customer-list"></div>
         </div>
 
@@ -669,7 +692,7 @@
         <!-- ボトムナビゲーション -->
         <div class="bottom-nav">
             <button class="nav-item active" onclick="switchView('customers')">
-                <div class="nav-icon">👥</div>
+                <div class="nav-icon">👔</div>
                 <div>顧客</div>
             </button>
             <button class="nav-item" onclick="switchView('calendar')">
@@ -689,6 +712,8 @@
         let currentBottleId = null;
         let currentDate = new Date();
         let editingCustomerId = null;
+        let isLoggedIn = false;
+
 
         // 初期データ
         function initData() {
@@ -1159,30 +1184,89 @@
         }
 
         // 初期化
-        initData();
+        // initData();
     </script>
 
     <!-- Firebase 初期化（今は接続だけ） -->
-    <script type="module">
-      import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
-      import { getAuth } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
-      import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+  import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-auth.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-firestore.js";
 
-      const firebaseConfig = {
-        apiKey: "AIzaSyC3wiXg0g4pVqNa33Q553PiuMkr_sY7_cM",
-        authDomain: "customer-bottle-app.firebaseapp.com",
-        projectId: "customer-bottle-app",
-        storageBucket: "customer-bottle-app.firebasestorage.app",
-        messagingSenderId: "276025360927",
-        appId: "1:276025360927:web:9199fa9aa2b726a90a0b2a",
-        measurementId: "G-ERXYHGWQM7"
-      };
+  const firebaseConfig = {
+    apiKey: "AIzaSyC3wiXg0g4pVqNa33Q553PiuMkr_sY7_cM",
+    authDomain: "customer-bottle-app.firebaseapp.com",
+    projectId: "customer-bottle-app",
+    storageBucket: "customer-bottle-app.firebasestorage.app",
+    messagingSenderId: "276025360927",
+    appId: "1:276025360927:web:9199fa9aa2b726a90a0b2a",
+    measurementId: "G-ERXYHGWQM7"
+  };
 
-      const app = initializeApp(firebaseConfig);
-      const auth = getAuth(app);
-      const db = getFirestore(app);
+  const app = initializeApp(firebaseConfig);
+  const auth = getAuth(app);
+  const db = getFirestore(app);
 
-      console.log("Firebase initialized", app);
-    </script>
-</body>
+  console.log("Firebase initialized", app);
+
+  const loginView = document.getElementById('loginView');
+  const appContainer = document.querySelector('.container');
+  const loginButton = document.getElementById('loginButton');
+  const loginEmail = document.getElementById('loginEmail');
+  const loginPassword = document.getElementById('loginPassword');
+  const loginError = document.getElementById('loginError');
+
+  // 初期状態ではアプリ本体を隠す
+  appContainer.style.display = 'none';
+
+  // 認証状態の監視
+  onAuthStateChanged(auth, (user) => {
+    if (user) {
+      // ログイン済み
+      window.isLoggedIn = true;
+      loginView.style.display = 'none';
+      appContainer.style.display = 'block';
+      // 顧客データ初期化（1回だけ実行されるよう保護）
+      if (!window._initDone) {
+        initData();
+        window._initDone = true;
+      } else {
+        renderCustomerList();
+        renderCalendar();
+      }
+    } else {
+      // 未ログイン
+      window.isLoggedIn = false;
+      appContainer.style.display = 'none';
+      loginView.style.display = 'block';
+    }
+  });
+
+  // ログインボタンクリック
+  if (loginButton) {
+    loginButton.addEventListener('click', async () => {
+      loginError.textContent = '';
+      const email = loginEmail.value.trim();
+      const password = loginPassword.value;
+
+      if (!email || !password) {
+        loginError.textContent = 'メールアドレスとパスワードを入力してください。';
+        return;
+      }
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        // 成功時は onAuthStateChanged が画面切り替えを行う
+      } catch (err) {
+        console.error(err);
+        loginError.textContent = 'ログインに失敗しました。メールアドレスとパスワードを確認してください。';
+      }
+    });
+  }
+
+  // （必要になったらログアウト処理の呼び出し用）
+  window.appAuth = { auth, db, signOut };
+</script>
+
+    </body>
 </html>
